@@ -8,7 +8,6 @@ import board     # for board
 import busio     # for i2c
 import neopixel  # for led ring
 import digitalio # for spi
-from analogio import AnalogIn
 
 try: 
   # i2c for the RFID-RC522
@@ -36,11 +35,13 @@ ring = neopixel.NeoPixel(pixpin, numpix, bpp=BPP, brightness=0.1, auto_write=Fal
 half = int(numpix / 2)
 quarter = int(numpix / 4)
 mode = 1
+sense_count = 0
 while True:
     # Two lines for troubleshooting to see analog value in REPL
     ring.show()
     # slow spinning white ring
     if mode == 1:
+        sense_count = 0
         print("Mode 1")
         for x in range(half-1, 0-1, -1):
 #          print(x,x+half)
@@ -50,7 +51,9 @@ while True:
           time.sleep(0.05)
           ring[x] = (0,0,0)
           ring[x+half] = (0,0,0)
-          if sensepin.value:
+          check_value = sensepin.value
+          if check_value:
+            lastpin = check_value
             mode = 2
             break
 
@@ -62,11 +65,17 @@ while True:
           speed_range = int(numpix/3)
           for speed in range(quarter, 0, -1):
             for x in range(half-1, 0-1, -2):
+              check_value = sensepin.value
+              if check_value != lastpin:
+                  sense_count = sense_count + 1
+                  lastpin = check_value
 #              print (speed, x, speed_range-speed+2, x-speed)
               ring[x] = (255,255,255)
               ring[x+half] = (255,255,255)
 #              for y in range(x-speed_range-speed+2, x):
 #                ring[y] = (255,255,255)
+              if sense_count > 2:
+                  break
               ring.show()
 #              time.sleep(speed*.005)
               if (speed > 0):
@@ -81,12 +90,28 @@ while True:
     if mode == 3:
         print("Mode 3")
         print("D12 = ", sensepin.value)
-        for x in range(0,numpix):
-          ring[x] = (0,255,0)
-        ring.show()
-        time.sleep(3)
-        ring.fill((0,0,0))
+        print("sense_count =", sense_count)
+        if sense_count < 2:
+            ring.fill((0,255, 0))
+            ring.show()
+            time.sleep(3)
+        else:
+            for z in range (0, 3):
+                # blue dimming
+                for y in range (255, 0, -32):
+#                    print("y = ", y)
+                    ring.fill((0, 0, y))
+                    ring.show()
+                # blue brightening 
+                for y in range (0, 255, 32):
+#                    print("y = ", y)
+                    ring.fill((0, 0, y))
+                    ring.show()
+
         mode = 1
+        ring.fill((0,0,0))
+        ring.show()
+
 
     if mode == 4:
         print("Tiki")
