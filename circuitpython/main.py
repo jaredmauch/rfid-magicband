@@ -1,7 +1,11 @@
 # Imports
 #
-# circuit python 4.1.2
+# tested: circuit python 4.1.2
+#
+# install lib/adafruit_dotstar to /lib/ on the filesystem
 # install lib/neopixel.mpy to /lib/ on the filesystem
+#
+# https://github.com/adafruit/Adafruit_CircuitPython_Bundle/releases
 #
 import time      # what time is it?
 import board     # for board
@@ -9,6 +13,14 @@ import busio     # for i2c
 import neopixel  # for led ring
 import digitalio # for spi
 
+import adafruit_dotstar # for on-board LED
+
+led = adafruit_dotstar.DotStar(board.APA102_SCK, board.APA102_MOSI, 1)
+led.brightness = 0.0 # turn the on-board LED off (save power)
+led[0] = (0, 0, 0) # turn the on-board LED off (save power)
+
+# i never managed to get the i2c way to work
+# so strapped the pi zero instead, revisit this code?
 try: 
   # i2c for the RFID-RC522
   i2c = busio.I2C(board.SCL, board.SDA)
@@ -18,7 +30,6 @@ try:
   # Print the addresses found once
   print("I2C addresses found:", [hex(device_address)
                                for device_address in i2c.scan()])
- 
   # Unlock I2C now that we're done scanning.
   i2c.unlock()
 except:
